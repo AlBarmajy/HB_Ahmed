@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج حفل عيد الميلاد</title>
+    <style>
+        /* تنسيقات أساسية */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* الحاوية الرئيسية */
+        #stage {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* طبقات العرض */
+        .layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out, transform 1.5s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* عشان مفيش حاجة تغطي على التانية */
+        }
+
+        /* الكلاس النشط لإظهار الطبقة */
+        .layer.active {
+            opacity: 1;
+            transform: scale(1);
+            z-index: 2;
+        }
+        
+        /* تأثير خفيف عند الاختفاء */
+        .layer.inactive {
+             transform: scale(1.05);
+        }
+
+
+        /* ----- تصميم مود الصور الفردية (Solo Mode) ----- */
+        #solo-layer img {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+            /* تأثير حركة بسيط */
+            animation: kenBurns 20s infinite alternate;
+        }
+
+        @keyframes kenBurns {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); }
+        }
+
+        /* ----- تصميم مود العائلة (Family Grid Mode) ----- */
+        #family-layer {
+            padding: 50px;
+            flex-direction: column;
+        }
+
+        .family-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 80%;
+            height: 70%;
+        }
+
+        .grid-item {
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .grid-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        
+        .grid-item:hover img {
+             transform: scale(1.1);
+        }
+
+        /* النصوص */
+        .caption-box {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            text-align: center;
+            backdrop-filter: blur(10px); /* Glassmorphism effect */
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 10;
+             opacity: 0;
+             transition: opacity 1s 0.5s; /* تأخير ظهور النص */
+        }
+        .caption-box.show {
+            opacity: 1;
+        }
+
+        /* زرار مؤقت لتشغيل الصوت */
+        #start-btn {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 24px;
+            background: gold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+    </style>
+</head>
+<body>
+
+    <button id="start-btn">اضغط هنا لبدء الحفل</button>
+    
+    <audio id="bg-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        متصفحك لا يدعم الصوت.
+    </audio>
+
+
+    <div id="stage">
+        <div id="solo-layer" class="layer">
+            <img id="solo-img" src="" alt="Solo Photo">
+        </div>
+
+        <div id="family-layer" class="layer">
+            <div class="family-grid" id="family-grid-container">
+                </div>
+        </div>
+
+        <div id="caption" class="caption-box"></div>
+    </div>
+
+
+    <script>
+        // ----- محاكاة للبيانات (الداتا اللي هتيجي من الفولدرات) -----
+        // هذا الجزء هو "عقل" السكربت اللي هنرتب فيه السيناريو
+        const sequence = [
+            {
+                mode: 'solo',
+                caption: 'نجم الحفلة ✨',
+                image: 'https://source.unsplash.com/random/800x1000/?man,portrait,smile'
+            },
+            {
+                mode: 'family',
+                caption: 'مع العائلة الكريمة - بيت العز ❤️',
+                // في الحقيقة دي هتكون مسارات الصور في فولدر العائلة دي
+                images: [
+                    'https://source.unsplash.com/random/400x400/?family,dinner',
+                    'https://source.unsplash.com/random/400x400/?family,laughing',
+                    'https://source.unsplash.com/random/400x400/?family,group',
+                    'https://source.unsplash.com/random/400x400/?parents',
+                    'https://source.unsplash.com/random/400x400/?siblings',
+                    'https://source.unsplash.com/random/400x400/?grandparents'
+                ]
+            },
+            {
+                mode: 'solo',
+                caption: 'ذكريات لا تُنسى...',
+                image: 'https://source.unsplash.com/random/800x1000/?man,happy'
+            },
+            {
+                mode: 'family',
+                caption: 'الأصحاب والسند - شلة الصحاب 🔥',
+                images: [
+                     'https://source.unsplash.com/random/400x400/?friends,party',
+                     'https://source.unsplash.com/random/400x400/?friends,beach',
+                     'https://source.unsplash.com/random/400x400/?friends,travel',
+                     'https://source.unsplash.com/random/400x400/?friends,laugh',
+                     'https://source.unsplash.com/random/400x400/?friends,group,fun',
+                     'https://source.unsplash.com/random/400x400/?friends,celebration'
+                ]
+            }
+        ];
+
+
+        let currentIndex = 0;
+        const soloLayer = document.getElementById('solo-layer');
+        const familyLayer = document.getElementById('family-layer');
+        const soloImg = document.getElementById('solo-img');
+        const familyGridContainer = document.getElementById('family-grid-container');
+        const captionBox = document.getElementById('caption');
+        const bgMusic = document.getElementById('bg-music');
+        const startBtn = document.getElementById('start-btn');
+
+        // تشغيل الصوت وإخفاء الزر
+        startBtn.addEventListener('click', () => {
+            bgMusic.play().catch(e => console.log("Music play failed needed interaction"));
+            startBtn.style.display = 'none';
+            runSequence(); // بدء العرض
+        });
+
+
+        function runSequence() {
+            const currentData = sequence[currentIndex];
+            
+            // إخفاء النص القديم
+            captionBox.classList.remove('show');
+
+            setTimeout(() => {
+                // تحديث النص
+                captionBox.textContent = currentData.caption;
+                captionBox.classList.add('show');
+
+                if (currentData.mode === 'solo') {
+                    // إعداد وضع السولو
+                    soloImg.src = currentData.image;
+                    switchLayer(soloLayer, familyLayer);
+
+                } else if (currentData.mode === 'family') {
+                    // إعداد وضع العائلة (بناء الشبكة)
+                    familyGridContainer.innerHTML = ''; // مسح القديم
+                    currentData.images.forEach(imgSrc => {
+                        const gridItem = document.createElement('div');
+                        gridItem.className = 'grid-item';
+                        gridItem.innerHTML = `<img src="${imgSrc}" alt="Family photo">`;
+                        familyGridContainer.appendChild(gridItem);
+                    });
+                    switchLayer(familyLayer, soloLayer);
+                }
+
+                // التحضير للخطوة التالية
+                currentIndex = (currentIndex + 1) % sequence.length; // لوب لا نهائي
+                setTimeout(runSequence, 6000); // تغيير كل 6 ثواني في النموذج
+
+            }, 500); // تأخير بسيط عشان حركة النص تبان
+        }
+
+
+        function switchLayer(layerToShow, layerToHide) {
+            layerToHide.classList.remove('active');
+            layerToHide.classList.add('inactive');
+            
+            // تأخير ظهور الطبقة الجديدة عشان الانتقال يبان أنعم
+            setTimeout(() => {
+                 layerToShow.classList.remove('inactive');
+                 layerToShow.classList.add('active');
+            }, 100);
+        }
+
+    </script>
+</body>
+</html>
